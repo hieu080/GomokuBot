@@ -175,10 +175,11 @@ Dự án bao gồm bộ kiểm thử tự động toàn diện với **531 unit 
 
 * **HieuPT** - *AI Engineer & Full-stack Developer*
 * **GitHub:** [@hieu080](https://github.com/hieu080)
-* **Email:** hieu.pt@tinasoft.com.vn
+* **Email:** [phantrunghieu020103@gmail.com](mailto:phantrunghieu020103@gmail.com)
 
 ---
 
 ## 📄 Bản quyền
 
 Dự án được phát hành theo giấy phép [MIT License](LICENSE).
+
