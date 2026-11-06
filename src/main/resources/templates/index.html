@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gomoku AI Battle - Cờ Caro Trí Tuệ Nhân Tạo</title>
+    <style>
+        :root {
+            --board-bg: #e6b36a;
+            --board-line: #5c3a21;
+            --board-border: #4a2f1b;
+            --bg-color: #1a1e24;
+            --card-bg: #242933;
+            --card-border: #384151;
+            --text-color: #e5e9f0;
+            --text-muted: #94a3b8;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --win-color: #10b981;
+            --lose-color: #ef4444;
+            --gold: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #111418;
+            border-bottom: 1px solid #2d3748;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            font-size: 26px;
+        }
+
+        .brand-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background-color: #312e81;
+            color: #c7d2fe;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 999px;
+            letter-spacing: 0.5px;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            gap: 28px;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        /* Board Area */
+        .board-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .goban-wrapper {
+            background: radial-gradient(circle at 40% 30%, #efc58b, #c68a44);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3), inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+            border: 4px solid var(--board-border);
+            position: relative;
+        }
+
+        #goban {
+            display: block;
+            cursor: pointer;
+            border-radius: 4px;
+            max-width: 100%;
+            height: auto;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Responsive Media Queries */
+        @media (max-width: 992px) {
+            header {
+                padding: 10px 16px;
+            }
+            main {
+                flex-direction: column;
+                align-items: center;
+                padding: 14px 10px;
+                gap: 16px;
+            }
+            .board-container {
+                width: 100%;
+                max-width: 600px;
+            }
+            .goban-wrapper {
+                padding: 12px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            #goban {
+                width: 100%;
+                max-width: 572px;
+                aspect-ratio: 1 / 1;
+            }
+            .sidebar {
+                width: 100%;
+                max-width: 600px;
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            header {
+                padding: 8px 12px;
+            }
+            .brand-title {
+                font-size: 17px;
+            }
+            .badge {
+                display: none;
+            }
+            #header-level-desc {
+                font-size: 11px;
+            }
+            main {
+                padding: 8px 6px;
+                gap: 12px;
+            }
+            .board-container, .sidebar {
+                max-width: 100%;
+            }
+            .goban-wrapper {
+                padding: 6px;
+                border-width: 3px;
+                border-radius: 8px;
+            }
+            .card {
+                padding: 12px;
+                border-radius: 10px;
+            }
+            .match-players {
+                gap: 8px;
+            }
+            .player-card {
+                padding: 8px 6px;
+            }
+            .player-name {
+                font-size: 12px;
+            }
+            .player-sub {
+                font-size: 10px;
+            }
+            .btn-action {
+                padding: 10px 6px;
+                font-size: 12px;
+            }
+            .btn-toggle {
+                padding: 7px 4px;
+                font-size: 11px;
+            }
+            .metrics-grid {
+                gap: 6px;
+            }
+            .metric-box {
+                padding: 7px 8px;
+            }
+            .metric-title {
+                font-size: 10px;
+            }
+            .metric-value {
+                font-size: 13px;
+            }
+            footer {
+                padding: 12px 8px;
+                font-size: 11px;
+            }
+        }
+
+        /* Sidebar / Controls */
+        .sidebar {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            background-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+        }
+
+        .status-dot.active {
+            background-color: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.thinking {
+            background-color: var(--gold);
+            box-shadow: 0 0 10px var(--gold);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.15); }
+        }
+
+        .match-players {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .player-card {
+            background: #1e242e;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .player-card.active-turn {
+            border-color: #3b82f6;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
+        }
+
+        .player-stone {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-bottom: 6px;
+            vertical-align: middle;
+        }
+
+        .stone-black {
+            background: radial-gradient(circle at 35% 35%, #555, #111 70%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+
+        .stone-white {
+            background: radial-gradient(circle at 35% 35%, #fff, #ddd 60%, #bbb 90%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .player-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .player-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .vs-divider {
+            font-weight: 800;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .metric-box {
+            background: #1a1f28;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .metric-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #38bdf8;
+            font-family: monospace;
+        }
+
+        /* Controls */
+        .controls-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-toggle {
+            flex: 1;
+            padding: 8px;
+            background: #1e242e;
+            border: 1px solid #334155;
+            color: var(--text-color);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-toggle:hover {
+            border-color: #64748b;
+        }
+
+        .btn-toggle.active {
+            background: #2563eb;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+        }
+
+        select {
+            background: #1e242e;
+            border: 1px solid #334155;
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #f1f5f9;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #475569;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Banner */
+        .result-banner {
+            display: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 15px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .banner-win {
+            background-color: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--win-color);
+            color: #34d399;
+        }
+
+        .banner-lose {
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--lose-color);
+            color: #f87171;
+        }
+
+        .banner-draw {
+            background-color: rgba(245, 158, 11, 0.2);
+            border: 1px solid var(--gold);
+            color: #fbbf24;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid #222934;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <span class="brand-icon">⚔️</span>
+        <span class="brand-title">GOMOKU BOT</span>
+        <span class="badge" id="bot-badge">PVS & VCF/VCT Engine</span>
+    </div>
+    <div style="font-size: 13px; color: var(--text-muted);" id="header-level-desc">
+        Cấp độ: Khó (Thi đấu)
+    </div>
+</header>
+
+<main>
+    <div class="board-container">
+        <div class="goban-wrapper">
+            <canvas id="goban" width="600" height="600"></canvas>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <!-- Status Card -->
+        <div class="card">
+            <div class="status-header">
+                <span class="status-pill">
+                    <span id="status-dot" class="status-dot active"></span>
+                    <span id="status-text">Lượt của bạn</span>
+                </span>
+                <span style="font-size: 12px; color: var(--text-muted);" id="move-counter">Nước: 0</span>
+            </div>
+
+            <div id="result-banner" class="result-banner"></div>
+
+            <div class="match-players">
+                <div id="player-card-human" class="player-card active-turn">
+                    <div id="human-stone-icon" class="player-stone stone-black"></div>
+                    <div class="player-name">Bạn</div>
+                    <div id="human-color-text" class="player-sub">Quân Đen (Đi trước)</div>
+                </div>
+
+                <div class="vs-divider">VS</div>
+
+                <div id="player-card-ai" class="player-card">
+                    <div id="ai-stone-icon" class="player-stone stone-white"></div>
+                    <div id="ai-name-label" class="player-name">GomokuBot</div>
+                    <div id="ai-color-text" class="player-sub">Quân Trắng</div>
+                </div>
+            </div>
+
+            <!-- AI Telemetry -->
+            <div style="margin-top: 12px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
+                    Chỉ số tính toán của AI (Engine Telemetry)
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <div class="metric-title">Thời gian nghĩ</div>
+                        <div id="metric-time" class="metric-value">0 ms</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-title">Độ sâu (Depth)</div>
+                        <div id="metric-depth" class="metric-value">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-title">Số nút đã duyệt</div>
+                        <div id="metric-nodes" class="metric-value">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-title">Điểm vị thế (Score)</div>
+                        <div id="metric-score" class="metric-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card controls-card">
+            <!-- Level Selector -->
+            <div class="form-group">
+                <label class="form-label">Chọn cấp độ Bot (Level)</label>
+                <div class="btn-group" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+                    <button type="button" class="btn-toggle" id="btn-level-easy" onclick="selectLevel('EASY')">
+                        🌱 Dễ (Tập chơi)
+                    </button>
+                    <button type="button" class="btn-toggle" id="btn-level-medium" onclick="selectLevel('MEDIUM')">
+                        ⚔️ Trung bình
+                    </button>
+                    <button type="button" class="btn-toggle active" id="btn-level-hard" onclick="selectLevel('HARD')">
+                        🔥 Khó (Thi đấu)
+                    </button>
+                    <button type="button" class="btn-toggle" id="btn-level-master" onclick="selectLevel('MASTER')">
+                        👑 Kiện tướng
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Chọn bên cầm quân cho ván mới</label>
+                <div class="btn-group">
+                    <button type="button" class="btn-toggle" id="btn-side-black" onclick="selectSide(1)">
+                        ⚫ Quân Đen (Đi trước)
+                    </button>
+                    <button type="button" class="btn-toggle active" id="btn-side-white" onclick="selectSide(2)">
+                        ⚪ Quân Trắng (AI đi trước)
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Thời gian suy nghĩ tối đa của AI</label>
+                <select id="time-limit-select">
+                    <option value="300">Nhanh (300 ms)</option>
+                    <option value="800">Cơ bản (800 ms)</option>
+                    <option value="1500">Tiêu chuẩn (1.5 giây)</option>
+                    <option value="2000">Nâng cao (2 giây)</option>
+                    <option value="4000" selected>Sâu (4 giây)</option>
+                    <option value="8000">Tối đa (8 giây)</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                <button type="button" class="btn-action btn-primary" onclick="startNewGame()" title="Bắt đầu ván cờ mới">
+                    🔄 Ván mới
+                </button>
+                <button type="button" id="btn-switch-side" class="btn-action" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); border: 1px solid #6366f1; color: white;" onclick="switchSide()" title="Đổi bên Đen/Trắng ngay trong ván đấu hoặc chuyển lượt cho Bot đi">
+                    🔀 Đổi bên / Đổi lượt
+                </button>
+                <button type="button" id="btn-undo" class="btn-action btn-secondary" onclick="undoMove()" title="Lùi lại nước đi">
+                    ↩️ Đi lại (Undo)
+                </button>
+                <button type="button" id="btn-ai-hint" class="btn-action btn-secondary" onclick="requestAiMove()" title="Yêu cầu Bot tính toán và đi hộ nước cờ hiện tại">
+                    💡 Bot đi hộ
+                </button>
+            </div>
+        </div>
+    </aside>
+</main>
+
+<footer>
+    Phát triển bởi HieuPT • Gomoku Engine tích hợp Iterative Deepening, PVS, Killer Move, Aspiration Windows, VCF/VCT & Opening Book
+</footer>
+
+<script>
+    const CANVAS = document.getElementById('goban');
+    const CTX = CANVAS.getContext('2d');
+    const BOARD_SIZE = 15;
+    const PADDING = 30;
+    let CELL_SIZE = (CANVAS.width - 2 * PADDING) / (BOARD_SIZE - 1);
+
+    let gameState = {
+        board: Array(15).fill(0).map(() => Array(15).fill(0)),
+        currentPlayer: 1,
+        humanPlayer: 1,
+        aiPlayer: 2,
+        status: "IN_PROGRESS",
+        winner: 0,
+        lastMoveX: null,
+        lastMoveY: null,
+        moveCount: 0,
+        isHumanTurn: true,
+        isGameOver: false,
+        lastAiSearch: null,
+        botLevel: "HARD",
+        botLevelDisplayName: "Khó (Thi đấu)"
+    };
+
+    let selectedHumanSide = 2;
+    let selectedLevel = 'MASTER';
+    let isRequestInProgress = false;
+    let hoverPos = null;
+
+    // Web Audio Click sound
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playStoneSound() {
+        try {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
+
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
+        } catch (e) {
+            // Audio context not allowed or failed
+        }
+    }
+
+    function selectLevel(lvl) {
+        selectedLevel = lvl;
+        ['easy', 'medium', 'hard', 'master'].forEach(l => {
+            const btn = document.getElementById(`btn-level-${l}`);
+            if (btn) btn.classList.toggle('active', l === lvl.toLowerCase());
+        });
+
+        const select = document.getElementById('time-limit-select');
+        if (lvl === 'EASY') select.value = "300";
+        else if (lvl === 'MEDIUM') select.value = "800";
+        else if (lvl === 'HARD') select.value = "2000";
+        else if (lvl === 'MASTER') select.value = "4000";
+    }
+
+    function selectSide(side) {
+        selectedHumanSide = side;
+        document.getElementById('btn-side-black').classList.toggle('active', side === 1);
+        document.getElementById('btn-side-white').classList.toggle('active', side === 2);
+    }
+
+    async function fetchState() {
+        try {
+            const res = await fetch('/api/game/state');
+            if (res.ok) {
+                gameState = await res.json();
+                if (gameState.botLevel) {
+                    selectLevel(gameState.botLevel);
+                }
+                if (gameState.humanPlayer) {
+                    selectSide(gameState.humanPlayer);
+                }
+                updateUI();
+                renderBoard();
+            }
+        } catch (err) {
+            console.error("Lỗi kết nối:", err);
+        }
+    }
+
+    async function startNewGame() {
+        if (isRequestInProgress) return;
+        const timeLimit = parseInt(document.getElementById('time-limit-select').value);
+
+        isRequestInProgress = true;
+        setThinkingUI(true);
+
+        try {
+            const res = await fetch('/api/game/new', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    width: BOARD_SIZE,
+                    height: BOARD_SIZE,
+                    humanPlayer: selectedHumanSide,
+                    moveTimeMs: timeLimit,
+                    level: selectedLevel
+                })
+            });
+
+            if (res.ok) {
+                gameState = await res.json();
+                playStoneSound();
+            }
+        } catch (err) {
+            console.error("Lỗi bắt đầu ván mới:", err);
+        } finally {
+            isRequestInProgress = false;
+            updateUI();
+            renderBoard();
+        }
+    }
+
+    async function makeMove(x, y) {
+        if (isRequestInProgress || gameState.isGameOver || !gameState.isHumanTurn) return;
+        if (gameState.board[y][x] !== 0) return;
+
+        // Optimistic human stone placement
+        gameState.board[y][x] = gameState.humanPlayer;
+        gameState.lastMoveX = x;
+        gameState.lastMoveY = y;
+        gameState.isHumanTurn = false;
+        playStoneSound();
+        renderBoard();
+
+        isRequestInProgress = true;
+        setThinkingUI(true);
+
+        try {
+            const res = await fetch('/api/game/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x: x, y: y })
+            });
+
+            if (res.ok) {
+                gameState = await res.json();
+                playStoneSound();
+            }
+        } catch (err) {
+            console.error("Lỗi đi quân:", err);
+        } finally {
+            isRequestInProgress = false;
+            updateUI();
+            renderBoard();
+        }
+    }
+
+    async function undoMove() {
+        if (isRequestInProgress || gameState.moveCount === 0) return;
+
+        isRequestInProgress = true;
+        try {
+            const res = await fetch('/api/game/undo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.ok) {
+                gameState = await res.json();
+                playStoneSound();
+            }
+        } catch (err) {
+            console.error("Lỗi undo:", err);
+        } finally {
+            isRequestInProgress = false;
+            updateUI();
+            renderBoard();
+        }
+    }
+
+    async function switchSide() {
+        if (isRequestInProgress || gameState.isGameOver) return;
+
+        isRequestInProgress = true;
+        setThinkingUI(true);
+
+        try {
+            const res = await fetch('/api/game/switch-side', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.ok) {
+                gameState = await res.json();
+                selectedHumanSide = gameState.humanPlayer;
+                selectSide(selectedHumanSide);
+                playStoneSound();
+            }
+        } catch (err) {
+            console.error("Lỗi đổi bên:", err);
+        } finally {
+            isRequestInProgress = false;
+            updateUI();
+            renderBoard();
+        }
+    }
+
+    async function requestAiMove() {
+        if (isRequestInProgress || gameState.isGameOver) return;
+
+        isRequestInProgress = true;
+        setThinkingUI(true);
+
+        try {
+            const res = await fetch('/api/game/ai-move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.ok) {
+                gameState = await res.json();
+                playStoneSound();
+            }
+        } catch (err) {
+            console.error("Lỗi AI move:", err);
+        } finally {
+            isRequestInProgress = false;
+            updateUI();
+            renderBoard();
+        }
+    }
+
+    function setThinkingUI(thinking) {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        const aiCard = document.getElementById('player-card-ai');
+        const humanCard = document.getElementById('player-card-human');
+
+        if (thinking) {
+            dot.className = "status-dot thinking";
+            text.innerText = "AI đang suy nghĩ...";
+            aiCard.classList.add('active-turn');
+            humanCard.classList.remove('active-turn');
+        }
+    }
+
+    function updateUI() {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        const counter = document.getElementById('move-counter');
+        const banner = document.getElementById('result-banner');
+        const undoBtn = document.getElementById('btn-undo');
+        const humanCard = document.getElementById('player-card-human');
+        const aiCard = document.getElementById('player-card-ai');
+
+        counter.innerText = `Nước: ${gameState.moveCount}`;
+        undoBtn.disabled = gameState.moveCount === 0 || isRequestInProgress;
+        const switchBtn = document.getElementById('btn-switch-side');
+        const aiHintBtn = document.getElementById('btn-ai-hint');
+        if (switchBtn) switchBtn.disabled = gameState.isGameOver || isRequestInProgress;
+        if (aiHintBtn) aiHintBtn.disabled = gameState.isGameOver || isRequestInProgress;
+
+        // Player indicators & level names
+        const lvlName = gameState.botLevelDisplayName || "Khó (Thi đấu)";
+        document.getElementById('header-level-desc').innerText = `Cấp độ: ${lvlName}`;
+        document.getElementById('ai-name-label').innerText = `GomokuBot (${lvlName.split(' ')[0]})`;
+
+        const isHumanBlack = gameState.humanPlayer === 1;
+        document.getElementById('human-stone-icon').className = isHumanBlack ? 'player-stone stone-black' : 'player-stone stone-white';
+        document.getElementById('human-color-text').innerText = isHumanBlack ? 'Quân Đen (Đi trước)' : 'Quân Trắng';
+
+        document.getElementById('ai-stone-icon').className = isHumanBlack ? 'player-stone stone-white' : 'player-stone stone-black';
+        document.getElementById('ai-color-text').innerText = isHumanBlack ? 'Quân Trắng' : 'Quân Đen (Đi trước)';
+
+        if (gameState.isGameOver) {
+            dot.className = "status-dot";
+            banner.style.display = "block";
+
+            if (gameState.winner === gameState.humanPlayer) {
+                text.innerText = "Bạn đã thắng! 🎉";
+                banner.className = "result-banner banner-win";
+                banner.innerText = "CHÚC MỪNG! BẠN ĐÃ ĐÁNH BẠI ĐƯỢC AI!";
+            } else if (gameState.winner === gameState.aiPlayer) {
+                text.innerText = "AI đã thắng! 🤖";
+                banner.className = "result-banner banner-lose";
+                banner.innerText = "AI ĐÃ CHIẾN THẮNG TRẬN ĐẤU!";
+            } else {
+                text.innerText = "Hòa cờ!";
+                banner.className = "result-banner banner-draw";
+                banner.innerText = "VÁN ĐẤU KẾT THÚC HÒA!";
+            }
+            humanCard.classList.remove('active-turn');
+            aiCard.classList.remove('active-turn');
+        } else {
+            banner.style.display = "none";
+            if (gameState.isHumanTurn) {
+                dot.className = "status-dot active";
+                text.innerText = "Lượt của bạn";
+                humanCard.classList.add('active-turn');
+                aiCard.classList.remove('active-turn');
+            } else {
+                dot.className = "status-dot thinking";
+                text.innerText = "AI đang suy nghĩ...";
+                aiCard.classList.add('active-turn');
+                humanCard.classList.remove('active-turn');
+            }
+        }
+
+        // Telemetry
+        if (gameState.lastAiSearch) {
+            const s = gameState.lastAiSearch;
+            document.getElementById('metric-time').innerText = `${s.elapsedTimeMillis} ms`;
+
+            if (s.nodesSearched === 1 && s.elapsedTimeMillis === 0) {
+                document.getElementById('metric-depth').innerText = "Book (0 ms)";
+                document.getElementById('metric-score').innerText = "Khai cuộc chuẩn";
+            } else {
+                document.getElementById('metric-depth').innerText = `Depth ${s.depth}`;
+                let scoreText = s.score.toString();
+                if (s.score >= 900000) {
+                    scoreText = "Mate in N (VCF/VCT)";
+                } else if (s.score <= -900000) {
+                    scoreText = "-Mate in N";
+                }
+                document.getElementById('metric-score').innerText = scoreText;
+            }
+
+            document.getElementById('metric-nodes').innerText = s.nodesSearched.toLocaleString();
+        }
+    }
+
+    function renderBoard() {
+        CTX.clearRect(0, 0, CANVAS.width, CANVAS.height);
+
+        // Grid lines
+        CTX.strokeStyle = "#5c3a21";
+        CTX.lineWidth = 1.2;
+
+        for (let i = 0; i < BOARD_SIZE; i++) {
+            // Horizontal lines
+            CTX.beginPath();
+            CTX.moveTo(PADDING, PADDING + i * CELL_SIZE);
+            CTX.lineTo(CANVAS.width - PADDING, PADDING + i * CELL_SIZE);
+            CTX.stroke();
+
+            // Vertical lines
+            CTX.beginPath();
+            CTX.moveTo(PADDING + i * CELL_SIZE, PADDING);
+            CTX.lineTo(PADDING + i * CELL_SIZE, CANVAS.height - PADDING);
+            CTX.stroke();
+        }
+
+        // Star points (hoshi)
+        const starPoints = [
+            [3, 3], [11, 3], [7, 7], [3, 11], [11, 11]
+        ];
+        CTX.fillStyle = "#5c3a21";
+        for (const [sx, sy] of starPoints) {
+            const cx = PADDING + sx * CELL_SIZE;
+            const cy = PADDING + sy * CELL_SIZE;
+            CTX.beginPath();
+            CTX.arc(cx, cy, 3.8, 0, 2 * Math.PI);
+            CTX.fill();
+        }
+
+        // Coordinate Labels
+        CTX.fillStyle = "#6d472a";
+        CTX.font = "10px sans-serif";
+        CTX.textAlign = "center";
+        CTX.textBaseline = "middle";
+
+        const letters = "ABCDEFGHIJKLMNO";
+        for (let i = 0; i < BOARD_SIZE; i++) {
+            // Top/Bottom Letters
+            CTX.fillText(letters[i], PADDING + i * CELL_SIZE, 12);
+            CTX.fillText(letters[i], PADDING + i * CELL_SIZE, CANVAS.height - 12);
+            // Left/Right Numbers
+            CTX.fillText((15 - i).toString(), 12, PADDING + i * CELL_SIZE);
+            CTX.fillText((15 - i).toString(), CANVAS.width - 12, PADDING + i * CELL_SIZE);
+        }
+
+        // Stones
+        const stoneRadius = CELL_SIZE * 0.44;
+        for (let y = 0; y < BOARD_SIZE; y++) {
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                const piece = gameState.board[y][x];
+                if (piece !== 0) {
+                    drawStone(x, y, piece, stoneRadius);
+                }
+            }
+        }
+
+        // Last move highlight
+        if (gameState.lastMoveX !== null && gameState.lastMoveY !== null) {
+            const lx = PADDING + gameState.lastMoveX * CELL_SIZE;
+            const ly = PADDING + gameState.lastMoveY * CELL_SIZE;
+
+            CTX.beginPath();
+            CTX.arc(lx, ly, 4.5, 0, 2 * Math.PI);
+            CTX.fillStyle = "#ef4444";
+            CTX.fill();
+
+            CTX.beginPath();
+            CTX.arc(lx, ly, stoneRadius * 0.7, 0, 2 * Math.PI);
+            CTX.strokeStyle = "rgba(239, 68, 68, 0.7)";
+            CTX.lineWidth = 2;
+            CTX.stroke();
+        }
+
+        // Hover ghost stone
+        if (hoverPos && gameState.isHumanTurn && !gameState.isGameOver && !isRequestInProgress) {
+            if (gameState.board[hoverPos.y][hoverPos.x] === 0) {
+                const hx = PADDING + hoverPos.x * CELL_SIZE;
+                const hy = PADDING + hoverPos.y * CELL_SIZE;
+
+                CTX.save();
+                CTX.globalAlpha = 0.45;
+                drawStone(hoverPos.x, hoverPos.y, gameState.humanPlayer, stoneRadius);
+                CTX.restore();
+            }
+        }
+    }
+
+    function drawStone(x, y, color, radius) {
+        const cx = PADDING + x * CELL_SIZE;
+        const cy = PADDING + y * CELL_SIZE;
+
+        // Shadow
+        CTX.save();
+        CTX.beginPath();
+        CTX.arc(cx + 2, cy + 3, radius, 0, 2 * Math.PI);
+        CTX.fillStyle = "rgba(0, 0, 0, 0.35)";
+        CTX.fill();
+        CTX.restore();
+
+        // Stone 3D Gradient
+        CTX.beginPath();
+        CTX.arc(cx, cy, radius, 0, 2 * Math.PI);
+
+        if (color === 1) { // Black
+            const grad = CTX.createRadialGradient(
+                cx - radius * 0.35, cy - radius * 0.35, radius * 0.1,
+                cx, cy, radius
+            );
+            grad.addColorStop(0, '#555555');
+            grad.addColorStop(0.3, '#222222');
+            grad.addColorStop(1, '#050505');
+            CTX.fillStyle = grad;
+        } else { // White
+            const grad = CTX.createRadialGradient(
+                cx - radius * 0.35, cy - radius * 0.35, radius * 0.1,
+                cx, cy, radius
+            );
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.7, '#e8e8e8');
+            grad.addColorStop(1, '#c2c2c2');
+            CTX.fillStyle = grad;
+        }
+        CTX.fill();
+
+        // Thin rim
+        CTX.strokeStyle = color === 1 ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.2)";
+        CTX.lineWidth = 0.8;
+        CTX.stroke();
+    }
+
+    // Canvas Events (Mouse & Touch Responsive)
+    function getGridCoords(e) {
+        const rect = CANVAS.getBoundingClientRect();
+        const scaleX = CANVAS.width / rect.width;
+        const scaleY = CANVAS.height / rect.height;
+
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        if (clientX === undefined && e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (clientX === undefined && e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        }
+
+        if (clientX === undefined || clientY === undefined) return null;
+
+        const mx = (clientX - rect.left) * scaleX;
+        const my = (clientY - rect.top) * scaleY;
+
+        const gx = Math.round((mx - PADDING) / CELL_SIZE);
+        const gy = Math.round((my - PADDING) / CELL_SIZE);
+
+        if (gx >= 0 && gx < BOARD_SIZE && gy >= 0 && gy < BOARD_SIZE) {
+            return { x: gx, y: gy };
+        }
+        return null;
+    }
+
+    let lastTouchTime = 0;
+
+    // Mobile Touch Events
+    CANVAS.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            const coords = getGridCoords(e.touches[0]);
+            if (coords) {
+                hoverPos = coords;
+                renderBoard();
+            }
+        }
+    }, { passive: true });
+
+    CANVAS.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+            const coords = getGridCoords(e.touches[0]);
+            if (coords) {
+                if (!hoverPos || hoverPos.x !== coords.x || hoverPos.y !== coords.y) {
+                    hoverPos = coords;
+                    renderBoard();
+                }
+            } else if (hoverPos) {
+                hoverPos = null;
+                renderBoard();
+            }
+        }
+    }, { passive: true });
+
+    CANVAS.addEventListener('touchend', (e) => {
+        lastTouchTime = Date.now();
+        const coords = hoverPos || (e.changedTouches.length > 0 ? getGridCoords(e.changedTouches[0]) : null);
+        if (coords) {
+            makeMove(coords.x, coords.y);
+            hoverPos = null;
+            renderBoard();
+        }
+        e.preventDefault();
+    });
+
+    CANVAS.addEventListener('touchcancel', () => {
+        hoverPos = null;
+        renderBoard();
+    });
+
+    // Desktop Mouse Events
+    CANVAS.addEventListener('mousemove', (e) => {
+        const coords = getGridCoords(e);
+        if (coords) {
+            if (!hoverPos || hoverPos.x !== coords.x || hoverPos.y !== coords.y) {
+                hoverPos = coords;
+                renderBoard();
+            }
+        } else if (hoverPos) {
+            hoverPos = null;
+            renderBoard();
+        }
+    });
+
+    CANVAS.addEventListener('mouseleave', () => {
+        hoverPos = null;
+        renderBoard();
+    });
+
+    CANVAS.addEventListener('click', (e) => {
+        // Prevent simulated click on touch devices right after touchend
+        if (Date.now() - lastTouchTime < 450) return;
+        const coords = getGridCoords(e);
+        if (coords) {
+            makeMove(coords.x, coords.y);
+        }
+    });
+
+    // Initial load
+    fetchState();
+</script>
+</body>
+</html>
